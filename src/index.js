@@ -55,8 +55,8 @@ async function getCurrentWeather(city) {
 
     setWeatherIcon(data.weather[0].icon);
 
-    // Time Info (using new serverless time.js)
-    getCurrentTime();
+    // Time Info (calculate from OpenWeather response)
+    setCurrentTime(data.dt, data.timezone);
 
     document.querySelector(".Error_Occur").style.display = "none";
   } catch (err) {
@@ -90,26 +90,30 @@ function setWeatherIcon(icon) {
   weatherIcon.src = icons[icon] || "Assets/Giff/drizzle_icon.gif";
 }
 
-async function getCurrentTime(lat, lon) {
-  try {
-    const response = await fetch(
-      `/.netlify/functions/time?lat=${lat}&lon=${lon}`
-    );
-    if (!response.ok) throw new Error("Failed to fetch time");
+// Calculate and display time from OpenWeather API dt and timezone
+function setCurrentTime(dt, timezoneOffset) {
+  const pad = (n) => (n < 10 ? "0" + n : n);
 
-    const result = await response.json();
+  // local timestamp in seconds
+  const localTimestamp = dt + timezoneOffset;
+  const localDate = new Date(localTimestamp * 1000);
 
-    // Display exactly like 1:10am
-    document.querySelector(".time").textContent =
-      result.hour + ":" + result.minute + result.ampm;
+  // hours & minutes
+  let hours = localDate.getUTCHours();
+  const minutes = localDate.getUTCMinutes();
+  const ampm = hours >= 12 ? "pm" : "am";
+  hours = hours % 12 === 0 ? 12 : hours % 12;
 
-    // Display exactly like Saturday, September | 06th
-    document.querySelector(
-      ".day-text"
-    ).textContent = `${result.day_of_week}, ${result.month} | ${result.day}th`;
-  } catch (err) {
-    console.error("Error fetching time:", err);
-    document.querySelector(".time").textContent = "--:--";
-    document.querySelector(".day-text").textContent = "Unknown";
-  }
+  // day & month
+  const dayOfWeek = localDate.toLocaleString("en-US", { weekday: "long" });
+  const month = localDate.toLocaleString("en-US", { month: "long" });
+  const day = pad(localDate.getUTCDate());
+
+  // Set HTML
+  document.querySelector(".time").textContent = `${hours}:${pad(
+    minutes
+  )}${ampm}`;
+  document.querySelector(
+    ".day-text"
+  ).textContent = `${dayOfWeek}, ${month} | ${day}th`;
 }

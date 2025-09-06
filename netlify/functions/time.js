@@ -10,50 +10,47 @@ exports.handler = async function (event, context) {
     };
   }
 
-  const API_KEY = process.env.WORLD_TIME_API_KEY; // Ninja API key
+  const OPENWEATHER_API_KEY = process.env.OPENWEATHER_API_KEY;
+  if (!OPENWEATHER_API_KEY) {
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: "OpenWeather API key is missing" }),
+    };
+  }
 
   try {
-    const response = await fetch(
-      `https://api.api-ninjas.com/v1/worldtime?lat=${lat}&lon=${lon}`,
-      { headers: { "X-Api-Key": API_KEY } }
-    );
-
-    if (!response.ok) throw new Error("Failed to fetch time");
+    // Fetch weather data to get timezone and dt
+    const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${OPENWEATHER_API_KEY}`;
+    const response = await fetch(url);
+    if (!response.ok) throw new Error("Failed to fetch OpenWeather data");
 
     const data = await response.json();
 
-    // Convert 24h to 12h format
-    let hour = data.hour % 12 === 0 ? 12 : data.hour % 12;
-    let minute = data.minute < 10 ? "0" + data.minute : data.minute;
-    let ampm = data.hour >= 12 ? "pm" : "am";
+    // Calculate local time
+    const dt = data.dt; // UTC timestamp in seconds
+    const timezoneOffset = data.timezone; // offset in seconds
+    const localTimestamp = dt + timezoneOffset;
+    const localDate = new Date(localTimestamp * 1000);
 
-    // Month names
-    const monthNames = [
-      "January",
-      "February",
-      "March",
-      "April",
-      "May",
-      "June",
-      "July",
-      "August",
-      "September",
-      "October",
-      "November",
-      "December",
-    ];
-    const month = monthNames[data.month - 1] || "Unknown";
+    // Format hour & minute
+    let hour = localDate.getUTCHours();
+    const minute = localDate.getUTCMinutes();
+    const ampm = hour >= 12 ? "pm" : "am";
+    hour = hour % 12 === 0 ? 12 : hour % 12;
 
-    // Day with leading zero
-    const day = data.day < 10 ? "0" + data.day : data.day;
+    // Format day & month
+    const pad = (n) => (n < 10 ? "0" + n : n);
+    const dayOfWeek = localDate.toLocaleString("en-US", { weekday: "long" });
+    const month = localDate.toLocaleString("en-US", { month: "long" });
+    const day = pad(localDate.getUTCDate());
 
     return {
       statusCode: 200,
       body: JSON.stringify({
         hour,
-        minute,
+        minute: pad(minute),
         ampm,
-        day_of_week: data.day_of_week,
+        day_of_week: dayOfWeek,
         month,
         day,
       }),
