@@ -90,17 +90,23 @@ function setWeatherIcon(icon) {
   weatherIcon.src = icons[icon] || "Assets/Giff/drizzle_icon.gif";
 }
 
-async function getCurrentTime() {
+async function getCurrentTime(lat, lon) {
   try {
-    const response = await fetch(`/.netlify/functions/time`);
+    const response = await fetch(
+      `/.netlify/functions/time?lat=${lat}&lon=${lon}`
+    );
     if (!response.ok) throw new Error("Failed to fetch time");
 
     const result = await response.json();
 
+    // Display exactly like 1:10am
     document.querySelector(".time").textContent =
       result.hour + ":" + result.minute + result.ampm;
-    document.querySelector(".day-text").textContent =
-      result.day_of_week + ", " + result.month + " | " + result.day + "th";
+
+    // Display exactly like Saturday, September | 06th
+    document.querySelector(
+      ".day-text"
+    ).textContent = `${result.day_of_week}, ${result.month} | ${result.day}th`;
   } catch (err) {
     console.error("Error fetching time:", err);
     document.querySelector(".time").textContent = "--:--";

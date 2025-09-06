@@ -10,38 +10,52 @@ exports.handler = async function (event, context) {
     };
   }
 
+  const API_KEY = process.env.WORLD_TIME_API_KEY; // Ninja API key
+
   try {
-    // Get approximate timezone by lat/lon using TimeZone API (WorldTimeAPI fallback)
-    // Here, using a fixed GMT fallback since WorldTimeAPI doesn't accept lat/lon directly
     const response = await fetch(
-      `http://worldtimeapi.org/api/timezone/Etc/GMT`
+      `https://api.api-ninjas.com/v1/worldtime?lat=${lat}&lon=${lon}`,
+      { headers: { "X-Api-Key": API_KEY } }
     );
+
     if (!response.ok) throw new Error("Failed to fetch time");
 
     const data = await response.json();
-    const date = new Date(data.datetime);
 
-    let hour = date.getHours();
-    const minute = date.getMinutes();
-    const ampm = hour >= 12 ? "pm" : "am";
-    hour = hour % 12 === 0 ? 12 : hour % 12;
+    // Convert 24h to 12h format
+    let hour = data.hour % 12 === 0 ? 12 : data.hour % 12;
+    let minute = data.minute < 10 ? "0" + data.minute : data.minute;
+    let ampm = data.hour >= 12 ? "pm" : "am";
 
-    const day_of_week = date.toLocaleString("en-US", { weekday: "long" });
-    const month = date.toLocaleString("en-US", { month: "long" });
-    const day = date.getDate();
+    // Month names
+    const monthNames = [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
+    ];
+    const month = monthNames[data.month - 1] || "Unknown";
 
-    // Helper to pad numbers
-    const pad = (n) => (n < 10 ? "0" + n : n);
+    // Day with leading zero
+    const day = data.day < 10 ? "0" + data.day : data.day;
 
     return {
       statusCode: 200,
       body: JSON.stringify({
         hour,
-        minute: pad(minute),
+        minute,
         ampm,
-        day_of_week,
+        day_of_week: data.day_of_week,
         month,
-        day: pad(day),
+        day,
       }),
     };
   } catch (err) {
