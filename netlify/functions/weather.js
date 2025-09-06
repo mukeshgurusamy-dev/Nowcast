@@ -1,32 +1,20 @@
-// netlify/functions/weather.js
-
-const fetch = require("node-fetch");
-
 exports.handler = async function (event, context) {
-  const API_KEY = "fcd594da9f5ee8279921c5f23f657105";
-  const city = event.queryStringParameters.city;
-
-  if (!city) {
-    return {
-      statusCode: 400,
-      body: JSON.stringify({ error: "City parameter is required" }),
-    };
-  }
+  const API_KEY = "YOUR_OPENWEATHER_API_KEY";
+  const city = event.queryStringParameters.city || "Chennai";
+  const url = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${API_KEY}&units=metric`;
 
   try {
-    const response = await fetch(
-      `https://api.openweathermap.org/data/2.5/weather?units=metric&q=${city}&appid=${API_KEY}`
-    );
+    const response = await fetch(url); // built-in fetch, no node-fetch
     const data = await response.json();
 
     return {
       statusCode: 200,
       body: JSON.stringify(data),
     };
-  } catch (err) {
+  } catch (error) {
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: "Failed to fetch weather data" }),
+      body: JSON.stringify({ error: error.message }),
     };
   }
 };
