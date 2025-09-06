@@ -1,9 +1,12 @@
 exports.handler = async function (event, context) {
-  const city = event.queryStringParameters.city || "Asia/Kolkata";
-  const url = `https://worldtimeapi.org/api/timezone/${city}`;
+  const lat = event.queryStringParameters.lat;
+  const lon = event.queryStringParameters.lon;
+  const url = `https://api.api-ninjas.com/v1/worldtime?lat=${lat}&lon=${lon}`;
 
   try {
-    const response = await fetch(url); // built-in fetch
+    const response = await fetch(url, {
+      headers: { "X-Api-Key": process.env.WORLD_TIME_API_KEY },
+    });
     const data = await response.json();
 
     return {
