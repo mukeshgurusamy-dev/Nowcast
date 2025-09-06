@@ -1,27 +1,34 @@
 // netlify/functions/time.js
-exports.handler = async function (event, context) {
-  const timezoneOffset = parseInt(event.queryStringParameters.timezone); // seconds from UTC
+const tzlookup = require("tz-lookup"); // npm install tz-lookup
 
-  if (isNaN(timezoneOffset)) {
+exports.handler = async function (event, context) {
+  const lat = parseFloat(event.queryStringParameters.lat);
+  const lon = parseFloat(event.queryStringParameters.lon);
+
+  if (isNaN(lat) || isNaN(lon)) {
     return {
       statusCode: 400,
-      body: JSON.stringify({ error: "Missing or invalid timezone" }),
+      body: JSON.stringify({ error: "Missing or invalid lat/lon" }),
     };
   }
 
   try {
-    const now = new Date();
-    const utc = now.getTime() + now.getTimezoneOffset() * 60000; // current UTC in ms
-    const localTime = new Date(utc + timezoneOffset * 1000);
+    const timezone = tzlookup(lat, lon); // get timezone string
+    const response = await fetch(
+      `http://worldtimeapi.org/api/timezone/${timezone}`
+    );
+    const data = await response.json();
 
-    const hour24 = localTime.getHours();
-    const minute = localTime.getMinutes();
+    const date = new Date(data.datetime);
+
+    const hour24 = date.getHours();
+    const minute = date.getMinutes();
     const ampm = hour24 >= 12 ? "pm" : "am";
     const hour = hour24 % 12 === 0 ? 12 : hour24 % 12;
 
-    const day_of_week = localTime.toLocaleString("en-US", { weekday: "long" });
-    const month = localTime.toLocaleString("en-US", { month: "long" });
-    const day = localTime.getDate();
+    const day_of_week = date.toLocaleString("en-US", { weekday: "long" });
+    const month = date.toLocaleString("en-US", { month: "long" });
+    const day = date.getDate();
 
     return {
       statusCode: 200,
