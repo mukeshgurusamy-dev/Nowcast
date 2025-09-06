@@ -27,13 +27,11 @@ async function getCurrentWeather(city) {
     let response, data;
 
     if (isNetlify) {
-      // Use Netlify serverless function
       response = await fetch(`/.netlify/functions/weather?city=${city}`);
       if (!response.ok) throw new Error("Failed to fetch weather");
       data = await response.json();
     } else {
-      // Local: Use CORS proxy
-      const API_KEY = "fcd594da9f5ee8279921c5f23f657105";
+      const API_KEY = "YOUR_LOCAL_OPENWEATHER_API_KEY";
       const proxy = "https://api.allorigins.win/get?url=";
       const url = encodeURIComponent(
         `https://api.openweathermap.org/data/2.5/weather?units=metric&q=${city}&appid=${API_KEY}`
@@ -50,7 +48,6 @@ async function getCurrentWeather(city) {
     document.querySelector(".humidity").textContent = data.main.humidity + "%";
     document.querySelector(".wind").textContent = data.wind.speed + " Km/h";
     document.querySelector(".weather_Info").textContent = data.weather[0].main;
-
     document.querySelector(".max").textContent =
       Math.round(data.main.feels_like) + "°C";
     document.querySelector(".min").textContent =
@@ -59,7 +56,7 @@ async function getCurrentWeather(city) {
     setWeatherIcon(data.weather[0].icon);
 
     // Time Info
-    getCurrentTime(data.coord.lat, data.coord.lon, data.timezone);
+    getCurrentTime(data.timezone);
 
     document.querySelector(".Error_Occur").style.display = "none";
   } catch (err) {
@@ -93,10 +90,10 @@ function setWeatherIcon(icon) {
   weatherIcon.src = icons[icon] || "Assets/Giff/drizzle_icon.gif";
 }
 
-async function getCurrentTime(lat, lon, timezoneOffset) {
+async function getCurrentTime(timezoneOffset) {
   try {
     const response = await fetch(
-      `/.netlify/functions/time?lat=${lat}&lon=${lon}&timezone=${timezoneOffset}`
+      `/.netlify/functions/time?timezone=${timezoneOffset}`
     );
     if (!response.ok) throw new Error("Failed to fetch time");
 

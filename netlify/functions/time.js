@@ -1,19 +1,17 @@
 // netlify/functions/time.js
 exports.handler = async function (event, context) {
-  const lat = parseFloat(event.queryStringParameters.lat);
-  const lon = parseFloat(event.queryStringParameters.lon);
-  const timezoneOffset = parseInt(event.queryStringParameters.timezone); // in seconds
+  const timezoneOffset = parseInt(event.queryStringParameters.timezone); // seconds from UTC
 
-  if (isNaN(lat) || isNaN(lon) || isNaN(timezoneOffset)) {
+  if (isNaN(timezoneOffset)) {
     return {
       statusCode: 400,
-      body: JSON.stringify({ error: "Missing or invalid lat/lon/timezone" }),
+      body: JSON.stringify({ error: "Missing or invalid timezone" }),
     };
   }
 
   try {
-    // Calculate local time using UTC + timezone offset
-    const utc = new Date().getTime() + new Date().getTimezoneOffset() * 60000;
+    const now = new Date();
+    const utc = now.getTime() + now.getTimezoneOffset() * 60000; // current UTC in ms
     const localTime = new Date(utc + timezoneOffset * 1000);
 
     const hour24 = localTime.getHours();
