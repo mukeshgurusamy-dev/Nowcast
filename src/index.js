@@ -99,13 +99,14 @@ async function getCurrentTime(lat, lon) {
 
     const result = await response.json();
 
+    // Helper function to pad numbers with leading zero
+    const pad = (n) => (n < 10 ? "0" + n : n);
+
     document.querySelector(".time").textContent =
-      result.hour +
-      ":" +
-      (result.minute < 10 ? "0" + result.minute : result.minute);
+      pad(result.hour) + ":" + pad(result.minute);
     document.querySelector(".time-sub-text").textContent = result.ampm;
     document.querySelector(".day-text").textContent =
-      result.day_of_week + ", " + result.month + " | " + result.day + "th";
+      result.day_of_week + ", " + result.month + " | " + pad(result.day) + "th";
   } catch (err) {
     console.error("Error fetching time:", err);
     document.querySelector(".time").textContent = "--:--";
