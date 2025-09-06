@@ -31,7 +31,13 @@ getCurrentWhether("Chennai");
 
 async function getCurrentWhether(city) {
   try {
-    const response = await fetch(API_URL_WEATHER + city + `&appid=${API_KEY}`);
+    const isNetlify = window.location.hostname.includes("netlify.app");
+    const proxy = isNetlify ? "https://cors-anywhere.herokuapp.com/" : "";
+
+    const response = await fetch(
+      proxy + API_URL_WEATHER + city + `&appid=${API_KEY}`
+    );
+
     if (!response.ok) {
       document.querySelector(".Error_Occur").style.display = "block";
       return;
