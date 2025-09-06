@@ -1,5 +1,5 @@
 // netlify/functions/time.js
-exports.handler = async function (event, context) {
+exports.handler = async function (event) {
   const lat = parseFloat(event.queryStringParameters.lat);
   const lon = parseFloat(event.queryStringParameters.lon);
 
@@ -12,24 +12,33 @@ exports.handler = async function (event, context) {
 
   const API_KEY = process.env.WORLD_TIME_API_KEY;
 
+  if (!API_KEY) {
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: "WORLD_TIME_API_KEY is missing" }),
+    };
+  }
+
   try {
+    // Fetch Ninja API
     const response = await fetch(
       `https://api.api-ninjas.com/v1/worldtime?lat=${lat}&lon=${lon}`,
       { headers: { "X-Api-Key": API_KEY } }
     );
 
-    if (!response.ok) throw new Error("Failed to fetch time");
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error(`Ninja API failed: ${text}`);
+    }
 
     const data = await response.json();
 
-    // Only pad minute and day
-    const pad = (n) => (n < 10 ? "0" + n : n);
-
+    // Format output
     const hour12 = data.hour % 12 === 0 ? 12 : data.hour % 12;
     const ampm = data.hour >= 12 ? "pm" : "am";
+    const pad = (n) => (n < 10 ? "0" + n : n);
 
-    // Convert month number to name
-    const monthNames = [
+    const months = [
       "January",
       "February",
       "March",
@@ -43,12 +52,12 @@ exports.handler = async function (event, context) {
       "November",
       "December",
     ];
-    const monthName = monthNames[data.month - 1] || "Unknown";
+    const monthName = months[data.month - 1] || "Unknown";
 
     return {
       statusCode: 200,
       body: JSON.stringify({
-        hour: hour12, // no leading zero
+        hour: hour12,
         minute: pad(data.minute),
         ampm,
         day_of_week: data.day_of_week,
