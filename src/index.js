@@ -95,27 +95,11 @@ function setWeatherIcon(icon) {
 
 async function getCurrentTime(latitude, longitude) {
   try {
-    let result;
-
-    if (isNetlify) {
-      // Use Netlify serverless function
-      const response = await fetch(
-        `/.netlify/functions/time?lat=${latitude}&lon=${longitude}`
-      );
-      if (!response.ok) throw new Error("Failed to fetch time");
-      result = await response.json();
-    } else {
-      // Local: CORS proxy
-      const proxy = "https://api.allorigins.win/get?url=";
-      const url = encodeURIComponent(
-        `https://api.api-ninjas.com/v1/worldtime?lat=${latitude}&lon=${longitude}`
-      );
-      const response = await fetch(proxy + url, {
-        headers: { "X-Api-Key": "ThZKOtGSBet1mEcoQqM7yA==jsQ0Yx2VZl6R0jKc" },
-      });
-      const json = await response.json();
-      result = JSON.parse(json.contents);
-    }
+    const response = await fetch(
+      `/.netlify/functions/time?lat=${latitude}&lon=${longitude}`
+    );
+    if (!response.ok) throw new Error("Failed to fetch time");
+    const result = await response.json();
 
     let hour = result.hour ?? 0;
     let minute = result.minute ?? 0;
