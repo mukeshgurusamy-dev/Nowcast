@@ -1,49 +1,47 @@
-const API_KEY = "fcd594da9f5ee8279921c5f23f657105";
-
-const API_URL_WEATHER =
-  "https://api.openweathermap.org/data/2.5/weather?units=metric&q=";
-const API_URL_TIME = "https://api.api-ninjas.com/v1/worldtime?&lat=";
-
 const searchBox = document.querySelector(".group input");
 const searchButton = document.querySelector(".group button");
 const weatherIcon = document.querySelector(".weather_icon");
 
-// Pressing "Enter" in input triggers search
+// Detect if running on Netlify
+const isNetlify = window.location.hostname.includes("netlify.app");
+
+// Pressing "Enter" triggers search
 searchBox.addEventListener("keydown", (event) => {
   if (event.key === "Enter") {
     const city = searchBox.value.trim();
-    if (city) getCurrentWhether(city);
+    if (city) getCurrentWeather(city);
   }
 });
 
 // Clicking the button triggers search
 searchButton.addEventListener("click", () => {
   const city = searchBox.value.trim();
-  if (city) getCurrentWhether(city);
+  if (city) getCurrentWeather(city);
 });
 
-const Time = document.querySelector(".time");
-const Time_Sub_Text = document.querySelector(".time-sub-text");
-const Day_Time_Text = document.querySelector(".day-text");
-
 // Initial load
-getCurrentWhether("Chennai");
+getCurrentWeather("Chennai");
 
-async function getCurrentWhether(city) {
+async function getCurrentWeather(city) {
   try {
-    const isNetlify = window.location.hostname.includes("netlify.app");
-    const proxy = isNetlify ? "https://cors-anywhere.herokuapp.com/" : "";
+    let response, data;
 
-    const response = await fetch(
-      proxy + API_URL_WEATHER + city + `&appid=${API_KEY}`
-    );
-
-    if (!response.ok) {
-      document.querySelector(".Error_Occur").style.display = "block";
-      return;
+    if (isNetlify) {
+      // Use Netlify serverless function
+      response = await fetch(`/.netlify/functions/weather?city=${city}`);
+      if (!response.ok) throw new Error("Failed to fetch weather");
+      data = await response.json();
+    } else {
+      // Local: Use CORS proxy
+      const API_KEY = "fcd594da9f5ee8279921c5f23f657105";
+      const proxy = "https://api.allorigins.win/get?url=";
+      const url = encodeURIComponent(
+        `https://api.openweathermap.org/data/2.5/weather?units=metric&q=${city}&appid=${API_KEY}`
+      );
+      response = await fetch(proxy + url);
+      const json = await response.json();
+      data = JSON.parse(json.contents);
     }
-
-    const data = await response.json();
 
     // Weather Info
     document.querySelector(".city").textContent = data.name;
@@ -53,17 +51,15 @@ async function getCurrentWhether(city) {
     document.querySelector(".wind").textContent = data.wind.speed + " Km/h";
     document.querySelector(".weather_Info").textContent = data.weather[0].main;
 
-    // Feels Like and Min
     document.querySelector(".max").textContent =
       Math.round(data.main.feels_like) + "°C";
     document.querySelector(".min").textContent =
       Math.round(data.main.temp_min) + "°C";
 
+    setWeatherIcon(data.weather[0].icon);
+
     // Time Info
     getCurrentTime(data.coord.lat, data.coord.lon);
-
-    // Weather Icons
-    setWeatherIcon(data.weather[0].icon);
 
     document.querySelector(".Error_Occur").style.display = "none";
   } catch (err) {
@@ -94,55 +90,70 @@ function setWeatherIcon(icon) {
     "50n": "Assets/Giff/misty_icon.gif",
   };
 
-  weatherIcon.src = icons[icon] || "drizzle_icon.gif";
+  weatherIcon.src = icons[icon] || "Assets/Giff/drizzle_icon.gif";
 }
 
 async function getCurrentTime(latitude, longitude) {
-  $.ajax({
-    method: "GET",
-    url: API_URL_TIME + latitude + "&lon=" + longitude,
-    headers: { "X-Api-Key": "ThZKOtGSBet1mEcoQqM7yA==jsQ0Yx2VZl6R0jKc" },
-    contentType: "application/json",
-    success: function (result) {
-      let hour, minute, ampm;
+  try {
+    let result;
 
-      if (result.hour > 12) {
-        hour = result.hour - 12;
-        minute = result.minute;
-        ampm = "pm";
-        if (hour === 0) hour = 12;
-      } else {
-        hour = result.hour;
-        minute = result.minute;
-        ampm = "am";
-      }
+    if (isNetlify) {
+      // Use Netlify serverless function
+      const response = await fetch(
+        `/.netlify/functions/time?lat=${latitude}&lon=${longitude}`
+      );
+      if (!response.ok) throw new Error("Failed to fetch time");
+      result = await response.json();
+    } else {
+      // Local: CORS proxy
+      const proxy = "https://api.allorigins.win/get?url=";
+      const url = encodeURIComponent(
+        `https://api.api-ninjas.com/v1/worldtime?lat=${latitude}&lon=${longitude}`
+      );
+      const response = await fetch(proxy + url, {
+        headers: { "X-Api-Key": "ThZKOtGSBet1mEcoQqM7yA==jsQ0Yx2VZl6R0jKc" },
+      });
+      const json = await response.json();
+      result = JSON.parse(json.contents);
+    }
 
-      const months = [
-        "January",
-        "February",
-        "March",
-        "April",
-        "May",
-        "June",
-        "July",
-        "August",
-        "September",
-        "October",
-        "November",
-        "December",
-      ];
+    let hour = result.hour ?? 0;
+    let minute = result.minute ?? 0;
+    let ampm = "am";
 
-      const month = months[result.month - 1] || "";
-      const day_of_week = result.day_of_week;
-      const day = result.day;
+    if (hour >= 12) {
+      ampm = "pm";
+      if (hour > 12) hour -= 12;
+    }
+    if (hour === 0) hour = 12;
 
-      document.querySelector(".time").textContent = hour + ":" + minute;
-      document.querySelector(".time-sub-text").textContent = ampm;
-      document.querySelector(".day-text").textContent =
-        day_of_week + ", " + month + " | " + day + "th";
-    },
-    error: function ajaxError(jqXHR) {
-      console.error("Error fetching time: ", jqXHR.responseText);
-    },
-  });
+    const months = [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
+    ];
+    const month = months[(result.month ?? 1) - 1];
+    const day_of_week = result.day_of_week ?? "Unknown";
+    const day = result.day ?? "Unknown";
+
+    document.querySelector(".time").textContent =
+      hour + ":" + (minute < 10 ? "0" + minute : minute);
+    document.querySelector(".time-sub-text").textContent = ampm;
+    document.querySelector(".day-text").textContent =
+      day_of_week + ", " + month + " | " + day + "th";
+  } catch (err) {
+    console.error("Error fetching time:", err);
+    document.querySelector(".time").textContent = "--:--";
+    document.querySelector(".time-sub-text").textContent = "--";
+    document.querySelector(".day-text").textContent = "Unknown";
+  }
 }
