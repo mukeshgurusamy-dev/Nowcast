@@ -31,7 +31,7 @@ Built with **HTML, CSS, JavaScript, jQuery, OpenWeather API**, and deployed on *
 - 🌡️ **Temperature, Humidity, Wind Speed, Min/Max Feels Like**  
 - ⏰ **Accurate Local Time** (calculated via OpenWeather timezone offset)  
 - 🌄 Dynamic **Weather Icons with GIF animations**  
-- 📱 Fully **responsive design** for desktop and mobile  
+- 📱 Fully **responsive design** for desktop,tablet and mobile devices even support old devices
 - ⚡ **Serverless Functions (Netlify)** for secure API key handling  
 
 ---
