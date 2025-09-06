@@ -2,28 +2,36 @@
 exports.handler = async function (event, context) {
   const lat = parseFloat(event.queryStringParameters.lat);
   const lon = parseFloat(event.queryStringParameters.lon);
+  const dt = parseInt(event.queryStringParameters.dt); // Pass OpenWeather dt
+  const timezone = parseInt(event.queryStringParameters.timezone); // Pass OpenWeather timezone offset in seconds
 
-  if (isNaN(lat) || isNaN(lon)) {
+  if (isNaN(lat) || isNaN(lon) || isNaN(dt) || isNaN(timezone)) {
     return {
       statusCode: 400,
-      body: JSON.stringify({ error: "Missing or invalid lat/lon" }),
+      body: JSON.stringify({ error: "Missing or invalid parameters" }),
     };
   }
 
   try {
-    // Use TimeAPI.io to get time by coordinates
-    const response = await fetch(
-      `https://timeapi.io/api/Time/current/coordinate?latitude=${lat}&longitude=${lon}`
-    );
-    if (!response.ok) throw new Error("Failed to fetch time");
+    // Calculate local time using dt and timezone offset
+    const localTime = new Date((dt + timezone) * 1000);
 
-    const data = await response.json();
+    let hours = localTime.getUTCHours();
+    const minutes = localTime.getUTCMinutes();
+    const ampm = hours >= 12 ? "pm" : "am";
+    hours = hours % 12 === 0 ? 12 : hours % 12;
 
-    // Convert 24h to 12h format
-    const hour12 = data.hour % 12 === 0 ? 12 : data.hour % 12;
-    const ampm = data.hour >= 12 ? "pm" : "am";
+    const pad = (n) => (n < 10 ? "0" + n : n);
 
-    // Month names
+    const dayNames = [
+      "Sunday",
+      "Monday",
+      "Tuesday",
+      "Wednesday",
+      "Thursday",
+      "Friday",
+      "Saturday",
+    ];
     const monthNames = [
       "January",
       "February",
@@ -38,20 +46,20 @@ exports.handler = async function (event, context) {
       "November",
       "December",
     ];
-    const monthName = monthNames[data.month - 1] || "Unknown";
 
-    // Pad minutes and day
-    const pad = (n) => (n < 10 ? "0" + n : n);
+    const dayOfWeek = dayNames[localTime.getUTCDay()];
+    const month = monthNames[localTime.getUTCMonth()];
+    const day = pad(localTime.getUTCDate());
 
     return {
       statusCode: 200,
       body: JSON.stringify({
-        hour: hour12, // no leading zero for hour
-        minute: pad(data.minute),
+        hour: hours,
+        minute: pad(minutes),
         ampm,
-        day_of_week: data.dayOfWeek,
-        month: monthName,
-        day: pad(data.day),
+        day_of_week: dayOfWeek,
+        month,
+        day,
       }),
     };
   } catch (err) {
