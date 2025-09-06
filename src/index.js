@@ -55,8 +55,8 @@ async function getCurrentWeather(city) {
 
     setWeatherIcon(data.weather[0].icon);
 
-    // Get time using time.js
-    getCurrentTime(data.coord.lat, data.coord.lon, data.dt, data.timezone);
+    // Time Info from OpenWeather dt + timezone
+    getCurrentTime(data.dt, data.timezone);
 
     document.querySelector(".Error_Occur").style.display = "none";
   } catch (err) {
@@ -90,24 +90,20 @@ function setWeatherIcon(icon) {
   weatherIcon.src = icons[icon] || "Assets/Giff/drizzle_icon.gif";
 }
 
-async function getCurrentTime(lat, lon) {
+// Get current time from OpenWeather dt + timezone
+async function getCurrentTime(dt, timezone) {
   try {
     const response = await fetch(
-      `/.netlify/functions/time?lat=${lat}&lon=${lon}`
+      `/.netlify/functions/time?dt=${dt}&timezone=${timezone}`
     );
     if (!response.ok) throw new Error("Failed to fetch time");
 
     const result = await response.json();
 
-    // Display hour:minute only in the main time element
     document.querySelector(
       ".time"
     ).textContent = `${result.hour}:${result.minute}`;
-
-    // Display am/pm in the separate element
     document.querySelector(".time-sub-text").textContent = result.ampm;
-
-    // Display day and date
     document.querySelector(
       ".day-text"
     ).textContent = `${result.day_of_week}, ${result.month} | ${result.day}th`;
