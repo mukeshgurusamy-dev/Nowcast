@@ -6,7 +6,12 @@
 }
 
 body {
-  background: #fff;
+  /*background: #fff;*/
+  background: url("Assets/Giff/backgrouding.gif");
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: left;
+  min-height: 100vh;
 }
 
 /* Search box */
