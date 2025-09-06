@@ -90,27 +90,70 @@ function setWeatherIcon(icon) {
   weatherIcon.src = icons[icon] || "Assets/Giff/drizzle_icon.gif";
 }
 
-async function getCurrentTime(lat, lon) {
-  try {
-    const response = await fetch(
-      `/.netlify/functions/time?lat=${lat}&lon=${lon}`
-    );
-    if (!response.ok) throw new Error("Failed to fetch time");
+async function getCurrentTime(latitude, longitude) {
+  const pad = (n) => (n < 10 ? "0" + n : n); // Only pad minutes and day
 
-    const result = await response.json();
+  $.ajax({
+    method: "GET",
+    url: API_URL_TIME + latitude + "&lon=" + longitude,
+    headers: { "X-Api-Key": "ThZKOtGSBet1mEcoQqM7yA==jsQ0Yx2VZl6R0jKc" },
+    contentType: "application/json",
+    success: function (result) {
+      let hour = result.hour % 12 === 0 ? 12 : result.hour % 12;
+      const ampm = result.hour >= 12 ? "pm" : "am";
+      const minute = pad(result.minute); // pad minutes
+      const day_of_week = result.day_of_week;
+      const day = pad(result.day); // pad day with leading zero if needed
 
-    // Helper function to pad numbers with leading zero
-    const pad = (n) => (n < 10 ? "0" + n : n);
+      let month;
+      switch (result.month) {
+        case 1:
+          month = "January";
+          break;
+        case 2:
+          month = "February";
+          break;
+        case 3:
+          month = "March";
+          break;
+        case 4:
+          month = "April";
+          break;
+        case 5:
+          month = "May";
+          break;
+        case 6:
+          month = "June";
+          break;
+        case 7:
+          month = "July";
+          break;
+        case 8:
+          month = "August";
+          break;
+        case 9:
+          month = "September";
+          break;
+        case 10:
+          month = "October";
+          break;
+        case 11:
+          month = "November";
+          break;
+        case 12:
+          month = "December";
+          break;
+        default:
+          month = new Date().toLocaleString("default", { month: "long" });
+      }
 
-    document.querySelector(".time").textContent =
-      pad(result.hour) + ":" + pad(result.minute);
-    document.querySelector(".time-sub-text").textContent = result.ampm;
-    document.querySelector(".day-text").textContent =
-      result.day_of_week + ", " + result.month + " | " + pad(result.day) + "th";
-  } catch (err) {
-    console.error("Error fetching time:", err);
-    document.querySelector(".time").textContent = "--:--";
-    document.querySelector(".time-sub-text").textContent = "--";
-    document.querySelector(".day-text").textContent = "Unknown";
-  }
+      document.querySelector(".time").innerHTML = `${hour}:${minute}${ampm}`;
+      document.querySelector(
+        ".day-text"
+      ).innerHTML = `${day_of_week}, ${month} | ${day}th`;
+    },
+    error: function (jqXHR) {
+      console.error("Error fetching time: ", jqXHR.responseText);
+    },
+  });
 }

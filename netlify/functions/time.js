@@ -15,28 +15,44 @@ exports.handler = async function (event, context) {
   try {
     const response = await fetch(
       `https://api.api-ninjas.com/v1/worldtime?lat=${lat}&lon=${lon}`,
-      {
-        headers: { "X-Api-Key": API_KEY },
-      }
+      { headers: { "X-Api-Key": API_KEY } }
     );
 
     if (!response.ok) throw new Error("Failed to fetch time");
 
     const data = await response.json();
 
-    // Helper function to pad numbers
+    // Only pad minute and day
     const pad = (n) => (n < 10 ? "0" + n : n);
 
     const hour12 = data.hour % 12 === 0 ? 12 : data.hour % 12;
+    const ampm = data.hour >= 12 ? "pm" : "am";
+
+    // Convert month number to name
+    const monthNames = [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
+    ];
+    const monthName = monthNames[data.month - 1] || "Unknown";
 
     return {
       statusCode: 200,
       body: JSON.stringify({
-        hour: pad(hour12),
+        hour: hour12, // no leading zero
         minute: pad(data.minute),
-        ampm: data.hour >= 12 ? "pm" : "am",
+        ampm,
         day_of_week: data.day_of_week,
-        month: data.month,
+        month: monthName,
         day: pad(data.day),
       }),
     };
