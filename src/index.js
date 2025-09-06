@@ -90,24 +90,31 @@ function setWeatherIcon(icon) {
   weatherIcon.src = icons[icon] || "Assets/Giff/drizzle_icon.gif";
 }
 
-async function getCurrentTime(lat, lon, dt, timezone) {
+async function getCurrentTime(lat, lon) {
   try {
     const response = await fetch(
-      `/.netlify/functions/time?lat=${lat}&lon=${lon}&dt=${dt}&timezone=${timezone}`
+      `/.netlify/functions/time?lat=${lat}&lon=${lon}`
     );
     if (!response.ok) throw new Error("Failed to fetch time");
 
     const result = await response.json();
 
+    // Display hour:minute only in the main time element
     document.querySelector(
       ".time"
-    ).textContent = `${result.hour}:${result.minute}${result.ampm}`;
+    ).textContent = `${result.hour}:${result.minute}`;
+
+    // Display am/pm in the separate element
+    document.querySelector(".time-sub-text").textContent = result.ampm;
+
+    // Display day and date
     document.querySelector(
       ".day-text"
     ).textContent = `${result.day_of_week}, ${result.month} | ${result.day}th`;
   } catch (err) {
     console.error("Error fetching time:", err);
     document.querySelector(".time").textContent = "--:--";
+    document.querySelector(".time-sub-text").textContent = "--";
     document.querySelector(".day-text").textContent = "Unknown";
   }
 }
