@@ -1,33 +1,45 @@
 // netlify/functions/time.js
 exports.handler = async function (event, context) {
-  const lat = event.queryStringParameters.lat;
-  const lon = event.queryStringParameters.lon;
+  const lat = parseFloat(event.queryStringParameters.lat);
+  const lon = parseFloat(event.queryStringParameters.lon);
+  const timezoneOffset = parseInt(event.queryStringParameters.timezone); // in seconds
 
-  if (!lat || !lon) {
+  if (isNaN(lat) || isNaN(lon) || isNaN(timezoneOffset)) {
     return {
       statusCode: 400,
-      body: JSON.stringify({ error: "Missing latitude or longitude" }),
+      body: JSON.stringify({ error: "Missing or invalid lat/lon/timezone" }),
     };
   }
 
-  const API_KEY = process.env.WORLD_TIME_API_KEY; // Set in Netlify env
-
-  const url = `https://api.api-ninjas.com/v1/worldtime?lat=${lat}&lon=${lon}`;
-
   try {
-    const response = await fetch(url, {
-      headers: { "X-Api-Key": API_KEY },
-    });
-    const data = await response.json();
+    // Calculate local time using UTC + timezone offset
+    const utc = new Date().getTime() + new Date().getTimezoneOffset() * 60000;
+    const localTime = new Date(utc + timezoneOffset * 1000);
+
+    const hour24 = localTime.getHours();
+    const minute = localTime.getMinutes();
+    const ampm = hour24 >= 12 ? "pm" : "am";
+    const hour = hour24 % 12 === 0 ? 12 : hour24 % 12;
+
+    const day_of_week = localTime.toLocaleString("en-US", { weekday: "long" });
+    const month = localTime.toLocaleString("en-US", { month: "long" });
+    const day = localTime.getDate();
 
     return {
       statusCode: 200,
-      body: JSON.stringify(data),
+      body: JSON.stringify({
+        hour,
+        minute,
+        ampm,
+        day_of_week,
+        month,
+        day,
+      }),
     };
-  } catch (error) {
+  } catch (err) {
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: error.message }),
+      body: JSON.stringify({ error: err.message }),
     };
   }
 };

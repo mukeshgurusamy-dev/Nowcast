@@ -59,7 +59,7 @@ async function getCurrentWeather(city) {
     setWeatherIcon(data.weather[0].icon);
 
     // Time Info
-    getCurrentTime(data.coord.lat, data.coord.lon);
+    getCurrentTime(data.coord.lat, data.coord.lon, data.timezone);
 
     document.querySelector(".Error_Occur").style.display = "none";
   } catch (err) {
@@ -93,40 +93,22 @@ function setWeatherIcon(icon) {
   weatherIcon.src = icons[icon] || "Assets/Giff/drizzle_icon.gif";
 }
 
-async function getCurrentTime(lat, lon) {
+async function getCurrentTime(lat, lon, timezoneOffset) {
   try {
-    // Get timezone from OpenWeather's coord
-    const cityDataResponse = await fetch(
-      `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=fcd594da9f5ee8279921c5f23f657105`
+    const response = await fetch(
+      `/.netlify/functions/time?lat=${lat}&lon=${lon}&timezone=${timezoneOffset}`
     );
-    const cityData = await cityDataResponse.json();
-    const timezone = cityData.timezone; // in seconds
+    if (!response.ok) throw new Error("Failed to fetch time");
 
-    // Calculate local time using UTC + offset
-    const utc = new Date().getTime() + new Date().getTimezoneOffset() * 60000;
-    const localTime = new Date(utc + timezone * 1000);
+    const result = await response.json();
 
-    // Format hour and minute
-    let hour = localTime.getHours();
-    const minute = localTime.getMinutes();
-    let ampm = "am";
-    if (hour >= 12) {
-      ampm = "pm";
-      if (hour > 12) hour -= 12;
-    }
-    if (hour === 0) hour = 12;
-
-    // Format day and month
-    const day_of_week = localTime.toLocaleString("en-US", { weekday: "long" });
-    const month = localTime.toLocaleString("en-US", { month: "long" });
-    const day = localTime.getDate();
-
-    // Update DOM
     document.querySelector(".time").textContent =
-      hour + ":" + (minute < 10 ? "0" + minute : minute);
-    document.querySelector(".time-sub-text").textContent = ampm;
+      result.hour +
+      ":" +
+      (result.minute < 10 ? "0" + result.minute : result.minute);
+    document.querySelector(".time-sub-text").textContent = result.ampm;
     document.querySelector(".day-text").textContent =
-      day_of_week + ", " + month + " | " + day + "th";
+      result.day_of_week + ", " + result.month + " | " + result.day + "th";
   } catch (err) {
     console.error("Error fetching time:", err);
     document.querySelector(".time").textContent = "--:--";
