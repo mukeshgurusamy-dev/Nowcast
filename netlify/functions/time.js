@@ -1,7 +1,7 @@
 // netlify/functions/time.js
 exports.handler = async function (event, context) {
   const lat = parseFloat(event.queryStringParameters.lat);
-  const lon = parseFloat(event.queryStringParameters.lon); // <-- fixed
+  const lon = parseFloat(event.queryStringParameters.lon);
 
   if (isNaN(lat) || isNaN(lon)) {
     return {
@@ -10,7 +10,7 @@ exports.handler = async function (event, context) {
     };
   }
 
-  const API_KEY = process.env.WORLD_TIME_API_KEY; // Ninja API key
+  const API_KEY = process.env.WORLD_TIME_API_KEY;
 
   try {
     const response = await fetch(
@@ -24,15 +24,20 @@ exports.handler = async function (event, context) {
 
     const data = await response.json();
 
+    // Helper function to pad numbers
+    const pad = (n) => (n < 10 ? "0" + n : n);
+
+    const hour12 = data.hour % 12 === 0 ? 12 : data.hour % 12;
+
     return {
       statusCode: 200,
       body: JSON.stringify({
-        hour: data.hour % 12 === 0 ? 12 : data.hour % 12,
-        minute: data.minute,
+        hour: pad(hour12),
+        minute: pad(data.minute),
         ampm: data.hour >= 12 ? "pm" : "am",
         day_of_week: data.day_of_week,
         month: data.month,
-        day: data.day,
+        day: pad(data.day),
       }),
     };
   } catch (err) {
