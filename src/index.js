@@ -55,7 +55,7 @@ async function getCurrentWeather(city) {
 
     setWeatherIcon(data.weather[0].icon);
 
-    // Time Info
+    // Time Info (using Ninja API)
     getCurrentTime(data.coord.lat, data.coord.lon);
 
     document.querySelector(".Error_Occur").style.display = "none";

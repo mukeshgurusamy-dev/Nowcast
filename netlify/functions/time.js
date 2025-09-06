@@ -1,9 +1,7 @@
 // netlify/functions/time.js
-const tzlookup = require("tz-lookup"); // npm install tz-lookup
-
 exports.handler = async function (event, context) {
   const lat = parseFloat(event.queryStringParameters.lat);
-  const lon = parseFloat(event.queryStringParameters.lon);
+  const lon = parseFloat(event.queryStringParameters.lon); // <-- fixed
 
   if (isNaN(lat) || isNaN(lon)) {
     return {
@@ -12,33 +10,29 @@ exports.handler = async function (event, context) {
     };
   }
 
+  const API_KEY = process.env.WORLD_TIME_API_KEY; // Ninja API key
+
   try {
-    const timezone = tzlookup(lat, lon); // get timezone string
     const response = await fetch(
-      `http://worldtimeapi.org/api/timezone/${timezone}`
+      `https://api.api-ninjas.com/v1/worldtime?lat=${lat}&lon=${lon}`,
+      {
+        headers: { "X-Api-Key": API_KEY },
+      }
     );
+
+    if (!response.ok) throw new Error("Failed to fetch time");
+
     const data = await response.json();
-
-    const date = new Date(data.datetime);
-
-    const hour24 = date.getHours();
-    const minute = date.getMinutes();
-    const ampm = hour24 >= 12 ? "pm" : "am";
-    const hour = hour24 % 12 === 0 ? 12 : hour24 % 12;
-
-    const day_of_week = date.toLocaleString("en-US", { weekday: "long" });
-    const month = date.toLocaleString("en-US", { month: "long" });
-    const day = date.getDate();
 
     return {
       statusCode: 200,
       body: JSON.stringify({
-        hour,
-        minute,
-        ampm,
-        day_of_week,
-        month,
-        day,
+        hour: data.hour % 12 === 0 ? 12 : data.hour % 12,
+        minute: data.minute,
+        ampm: data.hour >= 12 ? "pm" : "am",
+        day_of_week: data.day_of_week,
+        month: data.month,
+        day: data.day,
       }),
     };
   } catch (err) {
