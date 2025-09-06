@@ -93,42 +93,35 @@ function setWeatherIcon(icon) {
   weatherIcon.src = icons[icon] || "Assets/Giff/drizzle_icon.gif";
 }
 
-async function getCurrentTime(latitude, longitude) {
+async function getCurrentTime(lat, lon) {
   try {
-    const response = await fetch(
-      `/.netlify/functions/time?lat=${latitude}&lon=${longitude}`
+    // Get timezone from OpenWeather's coord
+    const cityDataResponse = await fetch(
+      `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=fcd594da9f5ee8279921c5f23f657105`
     );
-    if (!response.ok) throw new Error("Failed to fetch time");
-    const result = await response.json();
+    const cityData = await cityDataResponse.json();
+    const timezone = cityData.timezone; // in seconds
 
-    let hour = result.hour ?? 0;
-    let minute = result.minute ?? 0;
+    // Calculate local time using UTC + offset
+    const utc = new Date().getTime() + new Date().getTimezoneOffset() * 60000;
+    const localTime = new Date(utc + timezone * 1000);
+
+    // Format hour and minute
+    let hour = localTime.getHours();
+    const minute = localTime.getMinutes();
     let ampm = "am";
-
     if (hour >= 12) {
       ampm = "pm";
       if (hour > 12) hour -= 12;
     }
     if (hour === 0) hour = 12;
 
-    const months = [
-      "January",
-      "February",
-      "March",
-      "April",
-      "May",
-      "June",
-      "July",
-      "August",
-      "September",
-      "October",
-      "November",
-      "December",
-    ];
-    const month = months[(result.month ?? 1) - 1];
-    const day_of_week = result.day_of_week ?? "Unknown";
-    const day = result.day ?? "Unknown";
+    // Format day and month
+    const day_of_week = localTime.toLocaleString("en-US", { weekday: "long" });
+    const month = localTime.toLocaleString("en-US", { month: "long" });
+    const day = localTime.getDate();
 
+    // Update DOM
     document.querySelector(".time").textContent =
       hour + ":" + (minute < 10 ? "0" + minute : minute);
     document.querySelector(".time-sub-text").textContent = ampm;
