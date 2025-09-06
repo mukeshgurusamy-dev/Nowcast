@@ -68,27 +68,27 @@ async function getCurrentWhether(city) {
 
 function setWeatherIcon(icon) {
   const icons = {
-    "01d": "sunny_icon.gif",
-    "01n": "clear_moon.gif",
-    "02d": "few_clouds.gif",
-    "02n": "moon_fewclouds.gif",
-    "03d": "scatter_cloud.gif",
-    "03n": "scatter_cloudnight.gif",
-    "04d": "broken_cloudsday.gif",
-    "04n": "moon_fewclouds.gif",
-    "09d": "shower_rain.gif",
-    "09n": "shower_rain.gif",
-    "10d": "Rain_day.gif",
-    "10n": "Rain_night.gif",
-    "11d": "heavy_rain.gif",
-    "11n": "heavy_rain.gif",
-    "13d": "snow.gif",
-    "13n": "snow.gif",
-    "50d": "misty_icon.gif",
-    "50n": "misty_icon.gif",
+    "01d": "Assets/Giff/sunny_icon.gif",
+    "01n": "Assets/Giff/clear_moon.gif",
+    "02d": "Assets/Giff/few_clouds.gif",
+    "02n": "Assets/Giff/moon_fewclouds.gif",
+    "03d": "Assets/Giff/scatter_cloud.gif",
+    "03n": "Assets/Giff/scatter_cloudnight.gif",
+    "04d": "Assets/Giff/broken_cloudsday.gif",
+    "04n": "Assets/Giff/moon_fewclouds.gif",
+    "09d": "Assets/Giff/shower_rain.gif",
+    "09n": "Assets/Giff/shower_rain.gif",
+    "10d": "Assets/Giff/Rain_day.gif",
+    "10n": "Assets/Giff/Rain_night.gif",
+    "11d": "Assets/Giff/heavy_rain.gif",
+    "11n": "Assets/Giff/heavy_rain.gif",
+    "13d": "Assets/Giff/snow.gif",
+    "13n": "Assets/Giff/snow.gif",
+    "50d": "Assets/Giff/misty_icon.gif",
+    "50n": "Assets/Giff/misty_icon.gif",
   };
 
-  weatherIcon.src = "Assets/Giff/" + (icons[icon] || "drizzle_icon.gif");
+  weatherIcon.src = icons[icon] || "drizzle_icon.gif";
 }
 
 async function getCurrentTime(latitude, longitude) {
