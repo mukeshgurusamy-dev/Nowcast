@@ -90,30 +90,24 @@ function setWeatherIcon(icon) {
   weatherIcon.src = icons[icon] || "Assets/Giff/drizzle_icon.gif";
 }
 
-// Calculate and display time from OpenWeather API dt and timezone
-function setCurrentTime(dt, timezoneOffset) {
-  const pad = (n) => (n < 10 ? "0" + n : n);
+async function getCurrentTime(lat, lon) {
+  try {
+    const response = await fetch(
+      `/.netlify/functions/time?lat=${lat}&lon=${lon}`
+    );
+    if (!response.ok) throw new Error("Failed to fetch time");
 
-  // local timestamp in seconds
-  const localTimestamp = dt + timezoneOffset;
-  const localDate = new Date(localTimestamp * 1000);
+    const result = await response.json();
 
-  // hours & minutes
-  let hours = localDate.getUTCHours();
-  const minutes = localDate.getUTCMinutes();
-  const ampm = hours >= 12 ? "pm" : "am";
-  hours = hours % 12 === 0 ? 12 : hours % 12;
-
-  // day & month
-  const dayOfWeek = localDate.toLocaleString("en-US", { weekday: "long" });
-  const month = localDate.toLocaleString("en-US", { month: "long" });
-  const day = pad(localDate.getUTCDate());
-
-  // Set HTML
-  document.querySelector(".time").textContent = `${hours}:${pad(
-    minutes
-  )}${ampm}`;
-  document.querySelector(
-    ".day-text"
-  ).textContent = `${dayOfWeek}, ${month} | ${day}th`;
+    document.querySelector(
+      ".time"
+    ).textContent = `${result.hour}:${result.minute}${result.ampm}`;
+    document.querySelector(
+      ".day-text"
+    ).textContent = `${result.day_of_week}, ${result.month} | ${result.day}th`;
+  } catch (err) {
+    console.error("Error fetching time:", err);
+    document.querySelector(".time").textContent = "--:--";
+    document.querySelector(".day-text").textContent = "Unknown";
+  }
 }

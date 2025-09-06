@@ -10,49 +10,48 @@ exports.handler = async function (event, context) {
     };
   }
 
-  const OPENWEATHER_API_KEY = process.env.OPENWEATHER_API_KEY;
-  if (!OPENWEATHER_API_KEY) {
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ error: "OpenWeather API key is missing" }),
-    };
-  }
-
   try {
-    // Fetch weather data to get timezone and dt
-    const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${OPENWEATHER_API_KEY}`;
-    const response = await fetch(url);
-    if (!response.ok) throw new Error("Failed to fetch OpenWeather data");
+    // Use TimeAPI.io to get time by coordinates
+    const response = await fetch(
+      `https://timeapi.io/api/Time/current/coordinate?latitude=${lat}&longitude=${lon}`
+    );
+    if (!response.ok) throw new Error("Failed to fetch time");
 
     const data = await response.json();
 
-    // Calculate local time
-    const dt = data.dt; // UTC timestamp in seconds
-    const timezoneOffset = data.timezone; // offset in seconds
-    const localTimestamp = dt + timezoneOffset;
-    const localDate = new Date(localTimestamp * 1000);
+    // Convert 24h to 12h format
+    const hour12 = data.hour % 12 === 0 ? 12 : data.hour % 12;
+    const ampm = data.hour >= 12 ? "pm" : "am";
 
-    // Format hour & minute
-    let hour = localDate.getUTCHours();
-    const minute = localDate.getUTCMinutes();
-    const ampm = hour >= 12 ? "pm" : "am";
-    hour = hour % 12 === 0 ? 12 : hour % 12;
+    // Month names
+    const monthNames = [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
+    ];
+    const monthName = monthNames[data.month - 1] || "Unknown";
 
-    // Format day & month
+    // Pad minutes and day
     const pad = (n) => (n < 10 ? "0" + n : n);
-    const dayOfWeek = localDate.toLocaleString("en-US", { weekday: "long" });
-    const month = localDate.toLocaleString("en-US", { month: "long" });
-    const day = pad(localDate.getUTCDate());
 
     return {
       statusCode: 200,
       body: JSON.stringify({
-        hour,
-        minute: pad(minute),
+        hour: hour12, // no leading zero for hour
+        minute: pad(data.minute),
         ampm,
-        day_of_week: dayOfWeek,
-        month,
-        day,
+        day_of_week: data.dayOfWeek,
+        month: monthName,
+        day: pad(data.day),
       }),
     };
   } catch (err) {
